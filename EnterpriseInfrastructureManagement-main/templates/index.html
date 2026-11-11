@@ -1,0 +1,191 @@
+<!doctype html>
+<html>
+
+<head>
+
+    <title>Enterprise Infrastructure Monitoring Platform</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <meta http-equiv="refresh" content="5">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Enterprise Infrastructure Monitoring Platform</h1>
+
+    <h2>
+        Overall Cluster Health :
+        <span style="color: {{ overall_color }}">
+            {{ overall_status }}
+        </span>
+    </h2>
+
+    <br>
+
+    <table>
+
+        <tr>
+            <th>Hostname</th>
+            <th>CPU</th>
+            <th>RAM</th>
+            <th>Disk</th>
+            <th>Status</th>
+        </tr>
+
+        {% for server in servers %}
+
+        <tr>
+
+            <td>
+                <a href="#"
+                   onclick="loadHistory('{{ server.hostname }}'); return false;">
+                    {{ server.hostname }}
+                </a>
+            </td>
+
+            <td>{{ server.cpu }}%</td>
+
+            <td>{{ server.ram }}%</td>
+
+            <td>{{ server.disk }}%</td>
+
+            <td style="color: {{ server.color }};">
+                <strong>{{ server.status }}</strong>
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    <br><br>
+
+    <h2 id="graphTitle">
+        CPU History - management-node
+    </h2>
+
+    <canvas id="cpuChart" width="900" height="350"></canvas>
+
+</div>
+
+<script>
+
+let cpuChart;
+
+function loadHistory(hostname)
+{
+
+    fetch("/history/" + hostname)
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        document.getElementById("graphTitle").innerHTML =
+            "CPU History - " + hostname;
+
+        if(cpuChart)
+        {
+            cpuChart.destroy();
+        }
+
+        const ctx = document.getElementById("cpuChart");
+
+        cpuChart = new Chart(ctx, {
+
+            type: "line",
+
+            data: {
+
+                labels: data.timestamps,
+
+                datasets: [
+
+                    {
+
+                        label: hostname,
+
+                        data: data.cpu,
+
+                        borderColor: "rgb(75,192,192)",
+
+                        backgroundColor: "rgba(75,192,192,0.15)",
+
+                        fill: true,
+
+                        tension: 0.3
+
+                    }
+
+                ]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                plugins: {
+
+                    legend: {
+
+                        display: true
+
+                    }
+
+                },
+
+                scales: {
+
+                    y: {
+
+                        beginAtZero: true,
+
+                        max: 100,
+
+                        title: {
+
+                            display: true,
+
+                            text: "CPU Usage (%)"
+
+                        }
+
+                    },
+
+                    x: {
+
+                        title: {
+
+                            display: true,
+
+                            text: "Time"
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        });
+
+    });
+
+}
+
+loadHistory("management-node");
+
+</script>
+
+</body>
+
+</html>
